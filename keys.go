@@ -6,7 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"gitlab.eng.tethrnet.com/liulei/wgg/util"
+	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
 )
 
 func genKey(opts *cmdOptions) {
@@ -14,8 +15,8 @@ func genKey(opts *cmdOptions) {
 		showSubCommandUsage("genkey", opts)
 	}
 
-	key, err := wgtypes.GeneratePrivateKey()
-	checkError(err)
+	key, err := wggtypes.GeneratePrivateKey()
+	util.CheckError(err)
 	fmt.Println(key.String())
 }
 
@@ -24,8 +25,8 @@ func genPSK(opts *cmdOptions) {
 		showSubCommandUsage("genpsk", opts)
 	}
 
-	key, err := wgtypes.GenerateKey()
-	checkError(err)
+	key, err := wggtypes.GenerateKey()
+	util.CheckError(err)
 	fmt.Println(key.String())
 }
 
@@ -36,10 +37,10 @@ func pubKey(opts *cmdOptions) {
 
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
-	checkError(err)
+	util.CheckError(err)
 	input = strings.TrimSpace(input)
-	private, err := wgtypes.ParseKey(input)
-	checkError(err)
+	private, err := wggtypes.ParseKey(input)
+	util.CheckError(err)
 	public := private.PublicKey()
 	fmt.Println(public.String())
 }

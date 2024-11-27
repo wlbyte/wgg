@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -56,7 +55,7 @@ func getOptions() *cmdOptions {
 	opts.ShowKeys = os.Getenv(ENV_WG_HIDE_KEYS) == "never"
 	opts.Command = os.Getenv(ENV_WG_COMMAND)
 	if opts.Command == "" {
-		opts.Command = "wg-go"
+		opts.Command = "wgg"
 	}
 
 	if args == 0 {
@@ -109,13 +108,6 @@ func showVersion(opts *cmdOptions) {
 	if opts.Interface == "--help" || opts.Interface != "" || opts.Option != "" {
 		showSubCommandUsage("version", opts)
 	}
-	fmt.Printf("wg-go v%s https://github.com/seud0nym/wg-go (wgctrl %s)\n", appVersion, wgctrlVersion)
+	fmt.Printf("wgg v%s https://gitlab.eng.tethrnet.com/liulei/wgg (wgctrl %s)\n", appVersion, wgctrlVersion)
 	os.Exit(0)
-}
-
-func checkError(err error) {
-	if err != nil {
-		log.Fatalln(err)
-		os.Exit(2)
-	}
 }

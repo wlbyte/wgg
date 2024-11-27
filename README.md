@@ -1,4 +1,4 @@
-# wg-go
+# wgg
 
 A Golang implementation of the WireGuard [wg(8)](https://git.zx2c4.com/wireguard-tools/about/src/man/wg.8) utility.
 
@@ -6,7 +6,7 @@ This tool could be used to get and set the configuration of WireGuard tunnel int
 
 It can be used in conjunction with [wireguard-go](https://git.zx2c4.com/wireguard-go/about/) for an almost complete userspace implementation of WireGuard on platforms which can be targeted by Go but do not have an implementation of WireGuard available.
 
-`wg-go` can also control a kernel-based WireGuard configuration.
+`wgg` can also control a kernel-based WireGuard configuration.
 
 For more information on WireGuard, please see https://www.wireguard.com/.
 
@@ -26,7 +26,7 @@ The `--version` command line option is also supported to show the release versio
 
 ### Script Wrapper
 
-The `wg` script provides a convenient wrapper around `wg-go` to provide a level of compatibility with the [wg(8)](https://git.zx2c4.com/wireguard-tools/about/src/man/wg.8) utility.
+The `wg` script provides a convenient wrapper around `wgg` to provide a level of compatibility with the [wg(8)](https://git.zx2c4.com/wireguard-tools/about/src/man/wg.8) utility.
 
 ## How does this work?
 
@@ -36,8 +36,8 @@ This tool uses [wgctrl-go](https://github.com/WireGuard/wgctrl-go/) to enable co
 
 This requires an installation of go ≥ 1.16.
 ```
-git clone https://github.com/seud0nym/wg-go.git
-cd wg-go
+git clone https://gitlab.eng.tethrnet.com/liulei/wgg.git
+cd wgg
 make
 ```
 
@@ -46,3 +46,4 @@ You can build the executable for different architectures and operating systems b
 ## Original Code
 
 This project was inspired by and based upon [QuantumGhost/wg-quick-go](https://github.com/QuantumGhost/wg-quick-go).
+

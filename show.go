@@ -9,8 +9,9 @@ import (
 	"text/template"
 	"time"
 
-	"golang.zx2c4.com/wireguard/wgctrl"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"gitlab.eng.tethrnet.com/liulei/wgg/util"
+	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"gitlab.eng.tethrnet.com/liulei/wgg/wguser"
 )
 
 func show(opts *cmdOptions) {
@@ -18,39 +19,60 @@ func show(opts *cmdOptions) {
 		showSubCommandUsage("show { <interface> | all | interfaces } [public-key | private-key | listen-port | fwmark | peers | preshared-keys | endpoints | allowed-ips | latest-handshakes | transfer | persistent-keepalive | dump]", opts)
 	}
 
-	client, err := wgctrl.New()
-	checkError(err)
+	// client, err := wgctrl.New()
+	// util.CheckError(err)
+	client, err := wguser.New()
+	if err != nil {
+		fmt.Println("show() new client failed, error:", err)
+	}
 	switch opts.Interface {
 	case "interfaces":
 		devices, err := client.Devices()
-		checkError(err)
+		if err != nil {
+			fmt.Println("show() get Devices failed, error:", err)
+			os.Exit(1)
+		}
 		for i := 0; i < len(devices); i++ {
 			fmt.Println(devices[i].Name)
 		}
 	case "all":
 		devices, err := client.Devices()
-		checkError(err)
+		if err != nil {
+			fmt.Println("show() get Devices failed, error:", err)
+			os.Exit(1)
+		}
 		for _, dev := range devices {
 			showDevice(*dev, opts)
 		}
 	default:
 		dev, err := client.Device(opts.Interface)
-		checkError(err)
+		if err != nil {
+			fmt.Println("show() get Device failed, error:", err)
+			os.Exit(1)
+		}
 		showDevice(*dev, opts)
 	}
 	client.Close()
 }
 
-func showDevice(dev wgtypes.Device, opts *cmdOptions) {
+func showDevice(dev wggtypes.Device, opts *cmdOptions) {
 	if opts.Option == "" {
 		showKeys := opts.ShowKeys
-		fmt.Printf("Interface: %s (%s)\n", dev.Name, dev.Type.String())
+		fmt.Printf("interface: %s (%s)\n", dev.Name, dev.Type.String())
 		fmt.Printf("  public key: %s\n", dev.PublicKey.String())
 		fmt.Printf("  private key: %s\n", formatKey(dev.PrivateKey, showKeys))
 		fmt.Printf("  listening port: %d\n", dev.ListenPort)
 		fmt.Println()
 		for _, peer := range dev.Peers {
-			showPeers(peer, showKeys)
+			if dev.Bond != nil {
+				showPeers(peer, showKeys, true)
+			} else {
+				showPeers(peer, showKeys, false)
+			}
+
+		}
+		if dev.Bond != nil {
+			showBond(*dev.Bond)
 		}
 	} else {
 		deviceName := ""
@@ -112,19 +134,35 @@ func showDevice(dev wgtypes.Device, opts *cmdOptions) {
 	}
 }
 
-func showPeers(peer wgtypes.Peer, showKeys bool) {
-	const tmpl = `peer: {{ .PublicKey }}
-  endpoint = {{ .Endpoint }}
-  allowed ips = {{ .AllowedIPs }}
+func showPeers(peer wggtypes.Peer, showKeys bool, bond bool) {
+	var tmpl string
+	if bond {
+		tmpl = `peer: {{ .PublicKey }}
+  endpoint: {{ .Endpoint }}
   {{- if .PresharedKey}}
-  preshared key = {{ .PresharedKey }}
+  preshared key: {{ .PresharedKey }}
   {{- end}}
-  keep alive interval = {{ .KeepAliveInterval }}s
-  last handshake time = {{ .LastHandshakeTime }}
+  keep alive interval: {{ .KeepAliveInterval }}s
+  last handshake time: {{ .LastHandshakeTime }}
   transfer: {{ .ReceiveBytes }} bytes received, {{ .TransmitBytes }} bytes sent
-  protocol version = {{ .ProtocolVersion }} 
+  protocol version: {{ .ProtocolVersion }}
+		
+`
+	} else {
+		tmpl = `peer: {{ .PublicKey }}
+  endpoint: {{ .Endpoint }}
+  allowed ips: {{ .AllowedIPs }}
+  {{- if .PresharedKey}}
+  preshared key: {{ .PresharedKey }}
+  {{- end}}
+  keep alive interval: {{ .KeepAliveInterval }}s
+  last handshake time: {{ .LastHandshakeTime }}
+  transfer: {{ .ReceiveBytes }} bytes received, {{ .TransmitBytes }} bytes sent
+  protocol version: {{ .ProtocolVersion }} 
 
 `
+	}
+
 	type tmplContent struct {
 		PublicKey         string
 		PresharedKey      string
@@ -151,7 +189,27 @@ func showPeers(peer wgtypes.Peer, showKeys bool) {
 	}
 
 	err := t.Execute(os.Stdout, c)
-	checkError(err)
+	util.CheckError(err)
+}
+
+func showBond(bond wggtypes.BondConfig) {
+	fmt.Printf("bond: %s\n", bond.BondName)
+	fmt.Printf("  bond mode: %s\n", bond.BondMode)
+	if len(bond.BestPeer) > 0 {
+		fmt.Printf("  best peer: %s\n", bond.BestPeer.String())
+	}
+	for _, peer := range bond.SlavePeers {
+		if peer != bond.BestPeer {
+			fmt.Printf("  slave peer: %s\n", peer.String())
+		}
+	}
+	fmt.Printf("  active peer: %s\n", bond.ActivePeer)
+	fmt.Printf("  transfer: %.2f KiB received, %.2f KiB sent\n", float64(bond.ReceiveBytes/1024), float64(bond.TransmitBytes/1024))
+	allowedIpStrings := make([]string, 0, len(bond.AllowIPs))
+	for _, v := range bond.AllowIPs {
+		allowedIpStrings = append(allowedIpStrings, v.String())
+	}
+	fmt.Printf("  allowed ips: %s\n", strings.Join(allowedIpStrings, ","))
 }
 
 func formatEndpoint(endpoint *net.UDPAddr) string {
@@ -162,7 +220,7 @@ func formatEndpoint(endpoint *net.UDPAddr) string {
 	return ip
 }
 
-func formatKey(key wgtypes.Key, showKeys bool) string {
+func formatKey(key wggtypes.Key, showKeys bool) string {
 	k := "(hidden)"
 	if showKeys {
 		k = key.String()
@@ -170,7 +228,7 @@ func formatKey(key wgtypes.Key, showKeys bool) string {
 	return k
 }
 
-func formatPSK(key wgtypes.Key, none string) string {
+func formatPSK(key wggtypes.Key, none string) string {
 	psk := key.String()
 	if psk == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" {
 		return none

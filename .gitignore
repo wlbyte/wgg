@@ -1,1 +1,4 @@
-wg-go*
+.github/
+.vscode/
+wgg*
+go.sum

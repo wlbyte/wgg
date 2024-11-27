@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"regexp"
@@ -12,8 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"golang.zx2c4.com/wireguard/wgctrl"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"gitlab.eng.tethrnet.com/liulei/wgg/network"
+	"gitlab.eng.tethrnet.com/liulei/wgg/util"
+	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"gitlab.eng.tethrnet.com/liulei/wgg/wguser"
 )
 
 func setConfig(opts *cmdOptions) {
@@ -22,15 +23,34 @@ func setConfig(opts *cmdOptions) {
 	}
 
 	fin, err := os.Open(opts.Option)
-	checkError(err)
+	util.CheckError(err)
 	defer fin.Close()
 	cfg, err := loadConfig(fin)
-	checkError(err)
-	client, err := wgctrl.New()
-	checkError(err)
+	util.CheckError(err)
+	client, err := wguser.New()
+	util.CheckError(err)
+
+	//wireguard接口不存在时创建接口
+	if !network.DevExist(opts.Interface) {
+		if err := network.StartWireguardGo(opts.Interface, cfg.IpAddress); err != nil {
+			fmt.Printf("%s started failed, error: %s\n", opts.Interface, err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s started\n", opts.Interface)
+	}
+
 	err = client.ConfigureDevice(opts.Interface, *cfg)
-	checkError(err)
-	log.Printf("Interface %s configured.\n", opts.Interface)
+	if err != nil {
+		fmt.Printf("%s configured failed, error: %s\n", opts.Interface, err)
+		os.Exit(1)
+	}
+	fmt.Printf("%s configured.\n", opts.Interface)
+
+	// 配置路由
+	fmt.Printf("%s route configured\n", opts.Interface)
+	for _, ipNet := range cfg.Bond.AllowIPs {
+		network.ConfigRouteByIPNet(opts.Interface, "", "add", &ipNet)
+	}
 }
 
 // Spec: https://git.zx2c4.com/WireGuard/about/src/tools/man/wg.8
@@ -48,6 +68,7 @@ func (p parseError) Error() string {
 const (
 	sectionInterface = "Interface"
 	sectionPeer      = "Peer"
+	sectionBond      = "bond"
 	sectionEmpty     = ""
 )
 
@@ -81,13 +102,13 @@ func matchKeyValuePair(s string) (pair, bool) {
 	return pair{key: key, value: value}, true
 }
 
-func loadConfig(in io.Reader) (*wgtypes.Config, error) {
+func loadConfig(in io.Reader) (*wggtypes.Config, error) {
 	sc := bufio.NewScanner(in)
-	var cfg *wgtypes.Config = nil
-	peers := make([]wgtypes.PeerConfig, 0, 10)
-
+	var cfg *wggtypes.Config = nil
+	peers := make([]wggtypes.PeerConfig, 0, 10)
 	currentSec := sectionEmpty
-	var currentPeerConfig *wgtypes.PeerConfig = nil
+	var currentPeerConfig *wggtypes.PeerConfig = nil
+	var currentBondConfig *wggtypes.BondConfig = nil
 
 	for lineNum := 0; sc.Scan(); lineNum++ {
 		line := sc.Text()
@@ -101,16 +122,28 @@ func loadConfig(in io.Reader) (*wgtypes.Config, error) {
 				if cfg != nil {
 					return nil, parseError{message: "duplicated Interface section", line: lineNum}
 				}
-				cfg = &wgtypes.Config{ReplacePeers: true}
+				cfg = &wggtypes.Config{ReplacePeers: true}
 			} else if sec == sectionPeer {
 				if currentPeerConfig != nil {
 					peers = append(peers, *currentPeerConfig)
 				}
-				currentPeerConfig = &wgtypes.PeerConfig{ReplaceAllowedIPs: true}
+				currentPeerConfig = &wggtypes.PeerConfig{ReplaceAllowedIPs: true}
+			} else if sec == sectionBond {
+				if currentBondConfig != nil {
+					return nil, parseError{message: "duplicated bond section", line: lineNum}
+				} else {
+					currentBondConfig = &wggtypes.BondConfig{SlavePeers: make([]wggtypes.Key, 0, 4)}
+				}
 			} else {
 				return nil, parseError{message: fmt.Sprintf("Unknown section: %s", sec), line: lineNum}
 			}
 			currentSec = sec
+			if currentSec == sectionInterface || currentSec == sectionBond {
+				if currentPeerConfig != nil {
+					peers = append(peers, *currentPeerConfig)
+					currentPeerConfig = nil
+				}
+			}
 			continue
 		} else if pair, matched := matchKeyValuePair(line); matched {
 			var perr *parseError
@@ -121,6 +154,8 @@ func loadConfig(in io.Reader) (*wgtypes.Config, error) {
 				perr = parseInterfaceField(cfg, pair)
 			} else if currentSec == sectionPeer {
 				perr = parsePeerField(currentPeerConfig, pair)
+			} else if currentSec == sectionBond {
+				perr = parseBondField(currentBondConfig, pair)
 			}
 			if perr != nil {
 				perr.line = lineNum
@@ -135,10 +170,11 @@ func loadConfig(in io.Reader) (*wgtypes.Config, error) {
 		return nil, parseError{message: "no Interface section found"}
 	}
 	cfg.Peers = peers
+	cfg.Bond = currentBondConfig
 	return cfg, nil
 }
 
-func parseInterfaceField(cfg *wgtypes.Config, p pair) *parseError {
+func parseInterfaceField(cfg *wggtypes.Config, p pair) *parseError {
 	switch p.key {
 	case "PrivateKey":
 		key, err := decodeKey(p.value)
@@ -154,13 +190,17 @@ func parseInterfaceField(cfg *wgtypes.Config, p pair) *parseError {
 		cfg.ListenPort = &port
 	case "FwMark":
 		return &parseError{message: "FwMark is not supported"}
+	case "Address":
+		cfg.IpAddress = strings.TrimSpace(p.value)
+	case "DNS":
+		fmt.Println("Warning: unknown key DNS for Interface section")
 	default:
 		return &parseError{message: fmt.Sprintf("invalid key %s for Interface section", p.key)}
 	}
 	return nil
 }
 
-func parsePeerField(cfg *wgtypes.PeerConfig, p pair) *parseError {
+func parsePeerField(cfg *wggtypes.PeerConfig, p pair) *parseError {
 	switch p.key {
 	case "PublicKey":
 		key, err := decodeKey(p.value)
@@ -209,10 +249,49 @@ func parsePeerField(cfg *wgtypes.PeerConfig, p pair) *parseError {
 	return nil
 }
 
-func decodeKey(s string) (wgtypes.Key, *parseError) {
-	key, err := wgtypes.ParseKey(s)
+func parseBondField(cfg *wggtypes.BondConfig, p pair) *parseError {
+	switch p.key {
+	case "bondname":
+		cfg.BondName = p.value
+	case "bondmode":
+		if ok, err := wggtypes.ValidBondMode(p.value); !ok {
+			return &parseError{message: err.Error()}
+		}
+		cfg.BondMode = p.value
+	case "bestslavepeer":
+		key, err := decodeKey(p.value)
+		if err != nil {
+			return err
+		}
+		cfg.BestPeer = key
+	case "slavepeer":
+		key, err := decodeKey(p.value)
+		if err != nil {
+			return err
+		}
+		cfg.SlavePeers = append(cfg.SlavePeers, key)
+	case "AllowIPs":
+		allowedIPs := make([]net.IPNet, 0, 10)
+		splitted := strings.Split(p.value, ",")
+		for _, seg := range splitted {
+			seg = strings.TrimSpace(seg)
+			ip, err := parseIPNet(seg)
+			if err != nil {
+				return err
+			}
+			allowedIPs = append(allowedIPs, *ip)
+		}
+		cfg.AllowIPs = allowedIPs
+	default:
+		return &parseError{message: fmt.Sprintf("invalid key %s for Bond section", p.key)}
+	}
+	return nil
+}
+
+func decodeKey(s string) (wggtypes.Key, *parseError) {
+	key, err := wggtypes.ParseKey(s)
 	if err != nil {
-		return wgtypes.Key{}, &parseError{message: err.Error()}
+		return wggtypes.Key{}, &parseError{message: err.Error()}
 	}
 	return key, nil
 }

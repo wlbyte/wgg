@@ -65,9 +65,9 @@ func showDevice(dev wggtypes.Device, opts *cmdOptions) {
 		fmt.Println()
 		for _, peer := range dev.Peers {
 			if dev.Bond != nil {
-				showPeers(peer, showKeys, true)
+				showPeers(peer, showKeys)
 			} else {
-				showPeers(peer, showKeys, false)
+				showPeers(peer, showKeys)
 			}
 
 		}
@@ -134,22 +134,9 @@ func showDevice(dev wggtypes.Device, opts *cmdOptions) {
 	}
 }
 
-func showPeers(peer wggtypes.Peer, showKeys bool, bond bool) {
-	var tmpl string
-	if bond {
-		tmpl = `peer: {{ .PublicKey }}
-  endpoint: {{ .Endpoint }}
-  {{- if .PresharedKey}}
-  preshared key: {{ .PresharedKey }}
-  {{- end}}
-  keep alive interval: {{ .KeepAliveInterval }}s
-  last handshake time: {{ .LastHandshakeTime }}
-  transfer: {{ .ReceiveBytes }} bytes received, {{ .TransmitBytes }} bytes sent
-  protocol version: {{ .ProtocolVersion }}
-		
-`
-	} else {
-		tmpl = `peer: {{ .PublicKey }}
+func showPeers(peer wggtypes.Peer, showKeys bool) {
+
+	tmpl := `peer: {{ .PublicKey }}
   endpoint: {{ .Endpoint }}
   allowed ips: {{ .AllowedIPs }}
   {{- if .PresharedKey}}
@@ -161,7 +148,6 @@ func showPeers(peer wggtypes.Peer, showKeys bool, bond bool) {
   protocol version: {{ .ProtocolVersion }} 
 
 `
-	}
 
 	type tmplContent struct {
 		PublicKey         string

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"gitlab.eng.tethrnet.com/liulei/wgg/network"
 	"gitlab.eng.tethrnet.com/liulei/wgg/util"
 	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
 	"gitlab.eng.tethrnet.com/liulei/wgg/wguser"
@@ -18,8 +19,10 @@ func showConfig(opts *cmdOptions) {
 	util.CheckError(err)
 	dev, err := client.Device(opts.Interface)
 	util.CheckError(err)
+	address, err := network.GetAddressFirst(opts.Interface)
+	util.CheckError(err)
 	fmt.Printf("[Interface]\n")
-	fmt.Printf("Address =  %s\n", "")
+	fmt.Printf("Address =  %s\n", address)
 	fmt.Printf("ListenPort =  %d\n", dev.ListenPort)
 	fmt.Printf("PrivateKey = %s\n", dev.PrivateKey.String())
 	for _, peer := range dev.Peers {

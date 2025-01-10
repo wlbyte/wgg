@@ -48,8 +48,15 @@ func setConfig(opts *cmdOptions) {
 
 	// 配置路由
 	fmt.Printf("%s route configured\n", opts.Interface)
-	for _, ipNet := range cfg.Bond.AllowIPs {
-		network.ConfigRouteByIPNet(opts.Interface, "", "add", &ipNet)
+	for _, peer := range cfg.Peers {
+		for _, ipNet := range peer.AllowedIPs {
+			network.ConfigRouteByIPNet(opts.Interface, "", "add", &ipNet)
+		}
+	}
+	if cfg.Bond != nil {
+		for _, ipNet := range cfg.Bond.AllowIPs {
+			network.ConfigRouteByIPNet(opts.Interface, "", "add", &ipNet)
+		}
 	}
 }
 
@@ -193,7 +200,6 @@ func parseInterfaceField(cfg *wggtypes.Config, p pair) *parseError {
 	case "Address":
 		cfg.IpAddress = strings.TrimSpace(p.value)
 	case "DNS":
-		fmt.Println("Warning: unknown key DNS for Interface section")
 	default:
 		return &parseError{message: fmt.Sprintf("invalid key %s for Interface section", p.key)}
 	}

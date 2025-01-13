@@ -41,11 +41,7 @@ func StartWireguardGo(devName, ipAddress string) error {
 		}
 		break
 	}
-
-	err = ConfigInterface(devName, ipAddress)
-	if err != nil {
-		return fmt.Errorf("startWireguardGo() error: %s", err)
-	}
+	
 	return nil
 }
 

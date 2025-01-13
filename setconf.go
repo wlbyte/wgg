@@ -22,10 +22,10 @@ func setConfig(opts *cmdOptions) {
 		showSubCommandUsage("setconf <interface> <configuration filename>", opts)
 	}
 
-	fin, err := os.Open(opts.Option)
+	f, err := os.Open(opts.Option)
 	util.CheckError(err)
-	defer fin.Close()
-	cfg, err := loadConfig(fin)
+	defer f.Close()
+	cfg, err := loadConfig(f)
 	util.CheckError(err)
 	client, err := wguser.New()
 	util.CheckError(err)
@@ -38,10 +38,15 @@ func setConfig(opts *cmdOptions) {
 		}
 		fmt.Printf("%s started\n", opts.Interface)
 	}
+	err = network.ConfigInterface(opts.Interface, cfg.IpAddress)
+	if err != nil {
+		fmt.Printf("failed to config %s: %s\n", opts.Interface, err)
+		os.Exit(1)
+	}
 
 	err = client.ConfigureDevice(opts.Interface, *cfg)
 	if err != nil {
-		fmt.Printf("%s configured failed, error: %s\n", opts.Interface, err)
+		fmt.Printf("failed to config %s : %s\n", opts.Interface, err)
 		os.Exit(1)
 	}
 	fmt.Printf("%s configured.\n", opts.Interface)

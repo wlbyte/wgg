@@ -55,7 +55,7 @@ func writeConfig(w io.Writer, cfg wggtypes.Config) {
 	if cfg.PrivateKey != nil {
 		fmt.Fprintf(w, "private_key=%s\n", hexKey(*cfg.PrivateKey))
 	}
-
+	
 	if cfg.ListenPort != nil {
 		fmt.Fprintf(w, "listen_port=%d\n", *cfg.ListenPort)
 	}

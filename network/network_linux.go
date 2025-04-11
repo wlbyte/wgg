@@ -1,3 +1,5 @@
+//go:build linux
+
 package network
 
 import (
@@ -38,7 +40,7 @@ func ConfigRouteByStr(devName, gateway, ipMask, action string) error {
 	errStr := "ConfigRouteByStr() error: "
 	_, ipNet, err := net.ParseCIDR(ipMask)
 	if err != nil {
-		fmt.Errorf("%s%s", errStr, err)
+		return fmt.Errorf("%s%s", errStr, err)
 	}
 	return ConfigRouteByIPNet(devName, gateway, "add", ipNet)
 }

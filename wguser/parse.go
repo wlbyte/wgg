@@ -266,7 +266,9 @@ func (dp *deviceParser) parseAddr(s string) *net.UDPAddr {
 	if dp.err != nil {
 		return nil
 	}
-
+	if len(s) == 64 {
+		return nil
+	}
 	addr, err := net.ResolveUDPAddr("udp", s)
 	if err != nil {
 		dp.err = err

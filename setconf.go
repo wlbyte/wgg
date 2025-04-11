@@ -265,8 +265,8 @@ func parseBondField(cfg *wggtypes.BondConfig, p pair) *parseError {
 	case "bondname":
 		cfg.BondName = p.value
 	case "bondmode":
-		if ok, err := wggtypes.ValidBondMode(p.value); !ok {
-			return &parseError{message: err.Error()}
+		if ok := wggtypes.ValidBondMode(p.value); !ok {
+			return &parseError{message: "invalid bond mode"}
 		}
 		cfg.BondMode = p.value
 	case "bestslavepeer":

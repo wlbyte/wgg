@@ -3,7 +3,6 @@
     "commentTranslate.targetLanguage": "zh-CN",
     "commentTranslate.hover.enabled": true,
     "commentTranslate.multiLineMerge": true,
-    "go.goroot": "/root/go",
     "cSpell.words": [
         "allowd",
         "bestslavepeer",

@@ -46,7 +46,7 @@ func TestConfigRoute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ConfigRoute(tt.args.devName, tt.args.gateway, tt.args.ipMask, tt.args.action); (err != nil) != tt.wantErr {
+			if err := ConfigRouteByStr(tt.args.devName, tt.args.gateway, tt.args.ipMask, tt.args.action); (err != nil) != tt.wantErr {
 				t.Errorf("ConfigRoute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

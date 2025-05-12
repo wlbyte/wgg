@@ -19,7 +19,7 @@ require (
 	golang.org/x/sync v0.3.0 // indirect
 )
 
-module gitlab.eng.tethrnet.com/liulei/wgg
+module github.com/wlbyte/wgg
 
 go 1.21
 

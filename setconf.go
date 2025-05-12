@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/network"
-	"gitlab.eng.tethrnet.com/liulei/wgg/util"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wguser"
+	"github.com/wlbyte/wgg/network"
+	"github.com/wlbyte/wgg/util"
+	"github.com/wlbyte/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wguser"
 )
 
 func setConfig(opts *cmdOptions) {

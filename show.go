@@ -9,9 +9,9 @@ import (
 	"text/template"
 	"time"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/util"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wguser"
+	"github.com/wlbyte/wgg/util"
+	"github.com/wlbyte/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wguser"
 )
 
 func show(opts *cmdOptions) {

@@ -108,6 +108,6 @@ func showVersion(opts *cmdOptions) {
 	if opts.Interface == "--help" || opts.Interface != "" || opts.Option != "" {
 		showSubCommandUsage("version", opts)
 	}
-	fmt.Printf("wgg v%s https://gitlab.eng.tethrnet.com/liulei/wgg (wgctrl %s)\n", appVersion, wgctrlVersion)
+	fmt.Printf("wgg v%s https://github.com/wlbyte/wgg (wgctrl %s)\n", appVersion, wgctrlVersion)
 	os.Exit(0)
 }

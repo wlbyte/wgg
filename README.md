@@ -36,7 +36,7 @@ This tool uses [wgctrl-go](https://github.com/WireGuard/wgctrl-go/) to enable co
 
 This requires an installation of go ≥ 1.16.
 ```
-git clone https://gitlab.eng.tethrnet.com/liulei/wgg.git
+git clone https://github.com/wlbyte/wgg.git
 cd wgg
 make
 ```

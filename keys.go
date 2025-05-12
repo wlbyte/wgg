@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/util"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"github.com/wlbyte/wgg/util"
+	"github.com/wlbyte/wgg/wggtypes"
 )
 
 func genKey(opts *cmdOptions) {

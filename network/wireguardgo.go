@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/wguser"
+	"github.com/wlbyte/wgg/wguser"
 )
 
 func StartWireguardGo(devName, ipAddress string) error {

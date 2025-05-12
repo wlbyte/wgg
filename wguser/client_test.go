@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wggtypes"
 )
 
 // A known device name used throughout unit and integration tests.

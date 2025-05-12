@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wggtypes"
 )
 
 // The WireGuard userspace configuration protocol is described here:

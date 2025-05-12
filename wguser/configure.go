@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wggtypes"
 )
 
 // configureDevice configures a device specified by its path.

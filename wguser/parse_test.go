@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wggtypes"
 )
 
 // Example string source (with some slight modifications to use all fields):

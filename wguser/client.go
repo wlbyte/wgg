@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.eng.tethrnet.com/liulei/wgg/wggtypes"
+	"github.com/wlbyte/wgg/wggtypes"
 )
 
 // var _ wginternal.Client = &Client{}
